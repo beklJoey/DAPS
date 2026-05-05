@@ -59,47 +59,47 @@ EXPERIMENTS: list[ExperimentDef] = [
     ExperimentDef(
         exp_id=1,
         name="UNet + BCE (orig)",
-        script=PROJECT_ROOT / "train_exp1_unet_bce.py",
+        script=PROJECT_ROOT / "scripts" / "train_exp1_unet_bce.py",
         checkpoint=ARTIFACTS_DIR / "models" / "unet_bce_seed42_best.pt",
     ),
     ExperimentDef(
         exp_id=2,
         name="UNet + BCE-Dice (orig)",
-        script=PROJECT_ROOT / "train_exp2_unet_bce_dice.py",
+        script=PROJECT_ROOT / "scripts" / "train_exp2_unet_bce_dice.py",
         checkpoint=ARTIFACTS_DIR / "models" / "unet_bce_dice_seed42_best.pt",
     ),
     ExperimentDef(
         exp_id=3,
         name="TemporalUNet T=3",
-        script=PROJECT_ROOT / "retrain_temporal_unet.py",
+        script=PROJECT_ROOT / "scripts" / "retrain_temporal_unet.py",
         checkpoint=PROJECT_ROOT / "artifacts" / "models"
                    / "temporal_unet_t3_epoch30_seed42_best.pt",
     ),
     ExperimentDef(
         exp_id=4,
         name="UNet + BCE + pos_weight=136",
-        script=PROJECT_ROOT / "train_exp4_unet_pw136.py",
+        script=PROJECT_ROOT / "scripts" / "train_exp4_unet_pw136.py",
         checkpoint=PROJECT_ROOT / "artifacts" / "models"
                    / "unet_bce_pw136_seed42_best.pt",
     ),
     ExperimentDef(
         exp_id=5,
         name="UNet + Dice + BCE (0.5/0.5)",
-        script=PROJECT_ROOT / "train_exp5_unet_dice_bce.py",
+        script=PROJECT_ROOT / "scripts" / "train_exp5_unet_dice_bce.py",
         checkpoint=PROJECT_ROOT / "artifacts" / "models"
                    / "unet_dice_bce_seed42_best.pt",
     ),
     ExperimentDef(
         exp_id=6,
         name="UNet + BCE + aug + sampler",
-        script=PROJECT_ROOT / "train_aug_sampler.py",
+        script=PROJECT_ROOT / "scripts" / "train_aug_sampler.py",
         checkpoint=PROJECT_ROOT / "artifacts" / "models"
                    / "unet_bce_pw136_aug_sampler_seed42_best.pt",
     ),
     ExperimentDef(
         exp_id=7,
         name="UNet + BCE + pos_weight + 500 extra samples",
-        script=PROJECT_ROOT / "train_expanded.py",
+        script=PROJECT_ROOT / "scripts" / "train_expanded.py",
         checkpoint=PROJECT_ROOT / "artifacts" / "models"
                    / "unet_bce_pw136_expanded500_seed42_best.pt",
     ),
@@ -159,7 +159,7 @@ def _run_script(script: Path, exp_name: str) -> int:
 
 def _run_plots() -> None:
     """Generate the final comparison bar charts and save to ``artifacts/plots/``."""
-    plot_script = PROJECT_ROOT / "plot_comparison.py"
+    plot_script = PROJECT_ROOT / "scripts" / "plot_comparison.py"
     if plot_script.exists():
         subprocess.run([PYTHON, str(plot_script)], cwd=str(PROJECT_ROOT), check=False)
 

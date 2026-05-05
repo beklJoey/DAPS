@@ -1,58 +1,18 @@
-# ── Data (never commit raw data or databases) ─────────────────────────────────
-data/
-*.db
-*.npy
-
-# ── Model artifacts (large binaries) ─────────────────────────────────────────
+data/contrails_subset/
+data/extra/
 artifacts/
-checkpoints/
-*.pt
+__pycache__/
+*.pyc
 *.pth
+*.pt
+*.egg-info/
+.env
+*.zip
+.DS_Store
 
 # ── Kaggle credentials ────────────────────────────────────────────────────────
 kaggle.json
 .kaggle/
-
-# ── Python bytecode ───────────────────────────────────────────────────────────
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-dist/
-build/
-.eggs/
-*.egg
-
-# ── Virtual environments ───────────────────────────────────────────────────────
-.env
-.venv
-env/
-venv/
-*.conda
-
-# ── Jupyter ───────────────────────────────────────────────────────────────────
-.ipynb_checkpoints/
-*.ipynb
-
-# ── IDE ───────────────────────────────────────────────────────────────────────
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# ── OS ────────────────────────────────────────────────────────────────────────
-.DS_Store
-Thumbs.db
-
-# ── Archives ──────────────────────────────────────────────────────────────────
-*.zip
-
-# ── Logs ──────────────────────────────────────────────────────────────────────
-*.log
-logs/
-wandb/
-mlruns/
 
 # ── Claude Code internals ─────────────────────────────────────────────────────
 .claude/
