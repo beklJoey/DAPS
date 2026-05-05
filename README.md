@@ -50,6 +50,17 @@ python main.py
 
 All results, plots and checkpoints are saved to `artifacts/`.
 
+## Note on reported results
+
+Default `python main.py` runs on the 50-sample subset
+(data/sample/). Results will differ numerically from the
+paper. To reproduce exact reported results, replace
+data/sample/ with the full validated dataset and run:
+
+```bash
+python main.py --full
+```
+
 To force re-run of already completed experiments:
 
 ```bash
