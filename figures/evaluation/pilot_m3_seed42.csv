@@ -1,0 +1,2 @@
+run,seed,val_threshold,iou,dice,f1,precision,recall
+m3_temporal_unet,42,0.4,0.0034,0.0067,0.0067,0.0034,0.9989
