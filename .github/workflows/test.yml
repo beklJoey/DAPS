@@ -1,0 +1,30 @@
+name: CI Test
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        environment-file: environment.yml
+        activate-environment: contrail-segmentation
+        auto-activate-base: false
+
+    - name: Run main.py smoke test
+      shell: bash -l {0}
+      run: python main.py --smoke-test
+      timeout-minutes: 30
+
+    - name: Check artifacts exist
+      shell: bash -l {0}
+      run: |
+        ls artifacts/
+        echo "Artifacts generated successfully"
