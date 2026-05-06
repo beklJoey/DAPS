@@ -188,6 +188,16 @@ print(f"Split: {len(train_items)} train / {len(val_items)} val / {len(test_items
 
 # Count positives per split
 def _count_pos(items):
+    """Count samples that contain at least one positive (contrail) pixel.
+
+    Args:
+        items: List of ``(kind, data)`` tuples where *kind* is ``'db'`` or
+            ``'extra'`` and *data* is a :class:`~src.data.storage.ContrailSample`
+            or Path to the combined ``.npy`` file.
+
+    Returns:
+        Number of items whose mask contains any positive pixel.
+    """
     n = 0
     for kind, data in items:
         if kind == 'db':
@@ -205,6 +215,16 @@ print(f"  Positives: {pos_train}/{len(train_items)} train, "
       f"{pos_val}/{len(val_items)} val, {pos_test}/{len(test_items)} test")
 
 def _make_loader(items, shuffle, augment=False):
+    """Wrap a list of items in a DataLoader.
+
+    Args:
+        items: List of ``(kind, data)`` tuples for :class:`CombinedDataset`.
+        shuffle: Whether to shuffle every epoch.
+        augment: Whether to apply random horizontal/vertical flips.
+
+    Returns:
+        Configured :class:`~torch.utils.data.DataLoader`.
+    """
     ds = CombinedDataset(items, augment=augment)
     return DataLoader(ds, batch_size=BATCH_SIZE, shuffle=shuffle,
                       num_workers=NUM_WORKERS, pin_memory=True)
@@ -216,6 +236,17 @@ test_loader  = _make_loader(test_items,  shuffle=False, augment=False)
 
 # ── Training helpers ──────────────────────────────────────────────────────────
 def train_epoch(model, loader, criterion, optimizer) -> float:
+    """Run one training epoch and return mean loss.
+
+    Args:
+        model: Network to train.
+        loader: DataLoader over the training split.
+        criterion: Loss function (BCE with pos_weight).
+        optimizer: Parameter update rule.
+
+    Returns:
+        Mean training loss normalised by dataset size.
+    """
     model.train()
     total_loss = 0.0
     for images, masks in loader:
@@ -230,6 +261,17 @@ def train_epoch(model, loader, criterion, optimizer) -> float:
 
 
 def val_epoch(model, loader, criterion) -> tuple:
+    """Run one validation epoch.
+
+    Args:
+        model: Network to evaluate.
+        loader: DataLoader over the validation split.
+        criterion: Loss function.
+
+    Returns:
+        Tuple of ``(mean_val_loss, metrics_dict)`` from
+        :func:`~src.evaluation.metrics.compute_corrected_metrics` at threshold=0.5.
+    """
     model.eval()
     total_loss = 0.0
     all_probs, all_tgts = [], []
@@ -250,6 +292,14 @@ def val_epoch(model, loader, criterion) -> tuple:
 
 
 def _monitor(m: dict) -> float:
+    """Return ``positive_only_iou``, falling back to ``micro_iou`` if NaN.
+
+    Args:
+        m: Metrics dict from :func:`~src.evaluation.metrics.compute_corrected_metrics`.
+
+    Returns:
+        Scalar early-stopping signal.
+    """
     v = m.get("positive_only_iou", float("nan"))
     return v if not np.isnan(v) else m.get("micro_iou", 0.0)
 

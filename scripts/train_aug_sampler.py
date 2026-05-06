@@ -123,6 +123,15 @@ criterion = nn.BCEWithLogitsLoss(
 
 # ── Training helpers ──────────────────────────────────────────────────────────
 def train_epoch(model, optimizer) -> float:
+    """Run one training epoch using module-level train_loader and criterion.
+
+    Args:
+        model: Network to train.
+        optimizer: Parameter update rule.
+
+    Returns:
+        Mean training loss over all batches.
+    """
     model.train()
     total_loss = 0.0
     for images, masks in train_loader:
@@ -138,6 +147,15 @@ def train_epoch(model, optimizer) -> float:
 
 
 def val_epoch(model) -> tuple[float, dict]:
+    """Run one validation epoch using module-level val_loader and criterion.
+
+    Args:
+        model: Network to evaluate.
+
+    Returns:
+        Tuple of ``(mean_val_loss, metrics_dict)`` where metrics come from
+        :func:`~src.evaluation.metrics.compute_corrected_metrics` at threshold=0.5.
+    """
     model.eval()
     total_loss, all_probs, all_tgts = 0.0, [], []
     with torch.no_grad():
@@ -156,6 +174,14 @@ def val_epoch(model) -> tuple[float, dict]:
 
 
 def _monitor(m: dict) -> float:
+    """Return ``positive_only_iou``, falling back to ``micro_iou`` if NaN.
+
+    Args:
+        m: Metrics dict from :func:`~src.evaluation.metrics.compute_corrected_metrics`.
+
+    Returns:
+        Scalar early-stopping signal.
+    """
     v = m.get("positive_only_iou", float("nan"))
     return v if not np.isnan(v) else m.get("micro_iou", 0.0)
 

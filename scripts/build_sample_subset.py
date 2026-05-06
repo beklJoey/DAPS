@@ -41,6 +41,14 @@ CREATE TABLE IF NOT EXISTS {TABLE} (
 
 
 def _load_rows(db: Path) -> list[sqlite3.Row]:
+    """Load all rows from the contrail_samples table.
+
+    Args:
+        db: Path to the SQLite database file.
+
+    Returns:
+        List of :class:`sqlite3.Row` objects with dict-style column access.
+    """
     conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row
     rows = conn.execute(f"SELECT * FROM {TABLE}").fetchall()

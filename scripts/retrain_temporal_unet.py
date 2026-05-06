@@ -75,6 +75,15 @@ for p in [OUT_MODEL, OUT_HISTORY, OUT_METRICS, OUT_THRESH, OUT_PRED]:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def compute_pos_weight(train_samples: list, cap: float = POS_WEIGHT_CAP) -> float:
+    """Compute BCE pos_weight from training masks, capped to avoid instability.
+
+    Args:
+        train_samples: List of :class:`~src.data.storage.ContrailSample` objects.
+        cap: Maximum allowed weight (default ``POS_WEIGHT_CAP``).
+
+    Returns:
+        Capped ratio of negative to positive pixels across all training samples.
+    """
     total_pos = 0
     total_pix = 0
     for s in train_samples:
@@ -89,6 +98,18 @@ def compute_pos_weight(train_samples: list, cap: float = POS_WEIGHT_CAP) -> floa
 
 
 def train_epoch(model, loader, optimizer, criterion, device):
+    """Run one training epoch and return mean batch loss.
+
+    Args:
+        model: Network to train.
+        loader: Training DataLoader.
+        optimizer: Parameter update rule.
+        criterion: Loss function (BCE+Dice combined).
+        device: Torch device to send tensors to.
+
+    Returns:
+        Mean loss averaged over batches.
+    """
     model.train()
     total = 0.0
     for images, masks in loader:
@@ -128,6 +149,17 @@ def _monitor_val(corrected: dict) -> float:
 
 
 def save_prediction_vis(model, test_samples, ch_mean, ch_std, threshold, device, path):
+    """Save a grid of input / GT / probability / binary-prediction panels.
+
+    Args:
+        model: Trained network in eval mode.
+        test_samples: List of test :class:`~src.data.storage.ContrailSample` objects.
+        ch_mean: Channel-wise mean for normalisation (from training set).
+        ch_std: Channel-wise std for normalisation.
+        threshold: Binary threshold applied to sigmoid probabilities.
+        device: Torch device.
+        path: Output PNG file path.
+    """
     frame_indices = _select_frame_indices(N_FRAMES)
     pos_samples = [s for s in test_samples
                    if np.load(s.mask_path).squeeze(-1).sum() > 0]
@@ -166,6 +198,13 @@ def save_prediction_vis(model, test_samples, ch_mean, ch_std, threshold, device,
 
 
 def save_csv(path, rows, fieldnames):
+    """Write a list of dicts to a CSV file.
+
+    Args:
+        path: Destination file path.
+        rows: List of dicts to write as rows.
+        fieldnames: Column order for the CSV header.
+    """
     with open(path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
@@ -175,6 +214,13 @@ def save_csv(path, rows, fieldnames):
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 def main():
+    """Train TemporalUNet T=3 for up to 30 epochs and save all artifacts.
+
+    Loads samples via ``CONTRAIL_DB_PATH`` env var, resumes from the existing
+    5-epoch warm-start checkpoint, runs early stopping on val positive_only_iou,
+    and writes model, metrics, threshold scan, training history, and prediction
+    visualisation to ``artifacts/``.
+    """
     t_start = time.time()
     set_seed(SEED)
 
