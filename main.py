@@ -1,15 +1,23 @@
-"""Single entry point for all contrail-segmentation experiments.
+"""Contrail Segmentation — ELEC0135 Assignment.
 
-Runs 7 experiments sequentially from a single command::
+Main entry point for all experiments.
 
-    python main.py              # run all experiments (skips completed ones)
-    python main.py --force      # re-run everything even if checkpoints exist
-    python main.py --exp 4 7    # run only experiments 4 and 7
-    python main.py --smoke-test # CI: Exp 5 only, 2 epochs
+Usage:
+    python main.py              # Run all 7 experiments on data/sample/ (50 samples, ~15 min)
+    python main.py --smoke-test # Run Exp 5 only, 20 epochs (CI validation, ~10 min)
+    python main.py --full       # Run all 7 experiments on full dataset
 
-Each experiment checks for an existing checkpoint and skips if found (unless
-``--force`` is set).  Results are appended to
-``artifacts/tables/final_corrected_model_comparison.csv``.
+Note on results:
+    Default and smoke-test modes use data/sample/ (50 samples, 5 test samples).
+    Numerical results will differ from those reported in the paper, which were
+    obtained on the full validated dataset (96-496 training samples, 13 test samples).
+    The sample run demonstrates correct end-to-end pipeline execution.
+    To reproduce exact paper results, use --full with the complete dataset.
+
+Reproducibility:
+    All experiments use fixed random seed (seed=42).
+    All outputs are saved automatically to artifacts/.
+    No manual intervention required.
 
 Experiments
 -----------
@@ -17,7 +25,7 @@ Experiments
 2. UNet + BCE-Dice                    (loss ablation)
 3. TemporalUNet T=3                   (temporal context)
 4. UNet + Dice + BCE (0.5/0.5)        (combined loss, no pos_weight)
-5. UNet + BCE + pos_weight=136        (class-imbalance handling)
+5. UNet + BCE + pos_weight=136        (class-imbalance handling)  ← smoke-test target
 6. UNet + BCE + pos_weight + aug+samp (augmentation + weighted sampler)
 7. UNet + BCE + pos_weight + 500 extra samples  (expanded dataset)
 """
@@ -196,7 +204,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--smoke-test", action="store_true",
-        help="CI mode: Exp 5 only (UNet+BCE+pw=136), 2 epochs.",
+        help="CI mode: Exp 5 only (UNet+BCE+pw=136), 20 epochs max.",
     )
     return parser.parse_args()
 
@@ -206,15 +214,19 @@ def main() -> None:
 
     Iterates over the experiment list, skips ones with existing checkpoints
     (unless ``--force``), runs the training script, and generates plots.
-    In ``--smoke-test`` mode only Exp 5 (UNet+BCE+pw=136) is run with 2 epochs.
+    In ``--smoke-test`` mode only Exp 5 (UNet+BCE+pw=136) is run with 20 epochs max
+    and patience=5, targeting <15 min wall time on CPU.
     """
     args = parse_args()
     smoke: bool = args.smoke_test
 
     if smoke:
-        selected_ids: set[int] = {5}
-        force = True
-        extra_env: dict[str, str] = {"SMOKE_TEST_EPOCHS": "2"}
+        selected_ids: set[int] = {5}   # Exp 5 = UNet+BCE+pw=136
+        force = True                   # always re-run in CI
+        extra_env: dict[str, str] = {
+            "SMOKE_TEST_EPOCHS": "20",   # cap at 20 epochs (~10 min on CPU)
+            "SMOKE_TEST_PATIENCE": "5",  # tighter early stopping for CI
+        }
     else:
         selected_ids = set(args.exp) if args.exp else {e.exp_id for e in EXPERIMENTS}
         force = args.force
@@ -228,7 +240,7 @@ def main() -> None:
         "and run python main.py --full\n"
     )
     if smoke:
-        print("[SMOKE TEST] Exp 5 only (UNet+BCE+pw=136) — 2 epochs.\n")
+        print("[SMOKE TEST] Exp 5 only (UNet+BCE+pw=136) — 20 epochs max, patience=5.\n")
 
     if not _check_data():
         print(
