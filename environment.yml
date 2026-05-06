@@ -1,4 +1,4 @@
-name: contrail-segmentation
+name: amls2-final
 channels:
   - conda-forge
   - defaults

@@ -9,7 +9,7 @@
 
 ```bash
 conda env create -f environment.yml
-conda activate contrail-segmentation
+conda activate amls2-final
 ```
 
 ### Data

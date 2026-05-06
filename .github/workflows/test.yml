@@ -16,7 +16,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         environment-file: environment.yml
-        activate-environment: contrail-segmentation
+        activate-environment: amls2-final
         auto-activate-base: false
 
     - name: Run smoke test
