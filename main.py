@@ -5,6 +5,7 @@ Runs 7 experiments sequentially from a single command::
     python main.py              # run all experiments (skips completed ones)
     python main.py --force      # re-run everything even if checkpoints exist
     python main.py --exp 4 7    # run only experiments 4 and 7
+    python main.py --smoke-test # CI: Exp 1 + Exp 5 only, 2 epochs each
 
 Each experiment checks for an existing checkpoint and skips if found (unless
 ``--force`` is set).  Results are appended to
@@ -130,12 +131,17 @@ def _check_data() -> bool:
     return count > 0
 
 
-def _run_script(script: Path, exp_name: str) -> int:
+def _run_script(
+    script: Path,
+    exp_name: str,
+    extra_env: dict[str, str] | None = None,
+) -> int:
     """Execute a training script as a subprocess.
 
     Args:
         script: Absolute path to the Python script to run.
         exp_name: Display name used in log messages.
+        extra_env: Additional environment variables merged into the subprocess env.
 
     Returns:
         Exit code of the subprocess (0 = success).
@@ -145,10 +151,13 @@ def _run_script(script: Path, exp_name: str) -> int:
     print(f"  Script : {script.name}")
     print(f"{'='*70}")
     t0 = time.time()
+    env = {**os.environ, "CONTRAIL_DB_PATH": str(DB_PATH)}
+    if extra_env:
+        env.update(extra_env)
     result = subprocess.run(
         [PYTHON, str(script)],
         cwd=str(PROJECT_ROOT),
-        env={**os.environ, "CONTRAIL_DB_PATH": str(DB_PATH)},
+        env=env,
         check=False,
     )
     elapsed = (time.time() - t0) / 60
@@ -169,7 +178,8 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
     Returns:
-        Parsed :class:`argparse.Namespace` with attributes ``exp`` and ``force``.
+        Parsed :class:`argparse.Namespace` with attributes ``exp``, ``force``,
+        and ``smoke_test``.
     """
     parser = argparse.ArgumentParser(
         description="Run contrail segmentation experiments (1–7).",
@@ -184,6 +194,10 @@ def parse_args() -> argparse.Namespace:
         "--force", action="store_true",
         help="Re-run experiments even if a checkpoint already exists.",
     )
+    parser.add_argument(
+        "--smoke-test", action="store_true",
+        help="CI mode: Exp 1 + Exp 5 only, 2 epochs each.",
+    )
     return parser.parse_args()
 
 
@@ -192,9 +206,19 @@ def main() -> None:
 
     Iterates over the experiment list, skips ones with existing checkpoints
     (unless ``--force``), runs the training script, and generates plots.
+    In ``--smoke-test`` mode only Exp 1 and Exp 5 are run with 2 epochs each.
     """
     args = parse_args()
-    selected_ids = set(args.exp) if args.exp else {e.exp_id for e in EXPERIMENTS}
+    smoke: bool = args.smoke_test
+
+    if smoke:
+        selected_ids: set[int] = {5}
+        force = True
+        extra_env: dict[str, str] = {"SMOKE_TEST_EPOCHS": "2"}
+    else:
+        selected_ids = set(args.exp) if args.exp else {e.exp_id for e in EXPERIMENTS}
+        force = args.force
+        extra_env = {}
 
     _ensure_dirs()
 
@@ -203,6 +227,8 @@ def main() -> None:
         "Full 621-sample reproduction: replace data/sample/ with full dataset "
         "and run python main.py --full\n"
     )
+    if smoke:
+        print("[SMOKE TEST] Exp 5 only (UNet+BCE+pw=136) — 2 epochs.\n")
 
     if not _check_data():
         print(
@@ -216,9 +242,12 @@ def main() -> None:
     results: list[tuple[str, str]] = []
     for exp in EXPERIMENTS:
         if exp.exp_id not in selected_ids:
+            if smoke:
+                print(f"\n[Exp {exp.exp_id}] skipped in smoke test mode")
+                results.append((exp.name, "smoke skip"))
             continue
 
-        if exp.checkpoint.exists() and not args.force:
+        if exp.checkpoint.exists() and not force:
             print(f"\n[Exp {exp.exp_id}] SKIPPED — checkpoint exists: {exp.checkpoint.name}")
             results.append((exp.name, "skipped"))
             continue
@@ -231,7 +260,7 @@ def main() -> None:
             results.append((exp.name, "script missing"))
             continue
 
-        rc = _run_script(exp.script, exp.name)
+        rc = _run_script(exp.script, exp.name, extra_env=extra_env or None)
         results.append((exp.name, "ok" if rc == 0 else f"failed rc={rc}"))
 
     _run_plots()
