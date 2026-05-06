@@ -5,7 +5,7 @@ Runs 7 experiments sequentially from a single command::
     python main.py              # run all experiments (skips completed ones)
     python main.py --force      # re-run everything even if checkpoints exist
     python main.py --exp 4 7    # run only experiments 4 and 7
-    python main.py --smoke-test # CI: Exp 1 + Exp 5 only, 2 epochs each
+    python main.py --smoke-test # CI: Exp 5 only, 2 epochs
 
 Each experiment checks for an existing checkpoint and skips if found (unless
 ``--force`` is set).  Results are appended to
@@ -16,8 +16,8 @@ Experiments
 1. UNet + BCE                         (baseline)
 2. UNet + BCE-Dice                    (loss ablation)
 3. TemporalUNet T=3                   (temporal context)
-4. UNet + BCE + pos_weight=136        (class-imbalance handling)
-5. UNet + Dice + BCE (0.5/0.5)        (combined loss, no pos_weight)
+4. UNet + Dice + BCE (0.5/0.5)        (combined loss, no pos_weight)
+5. UNet + BCE + pos_weight=136        (class-imbalance handling)
 6. UNet + BCE + pos_weight + aug+samp (augmentation + weighted sampler)
 7. UNet + BCE + pos_weight + 500 extra samples  (expanded dataset)
 """
@@ -78,17 +78,17 @@ EXPERIMENTS: list[ExperimentDef] = [
     ),
     ExperimentDef(
         exp_id=4,
-        name="UNet + BCE + pos_weight=136",
-        script=PROJECT_ROOT / "scripts" / "train_exp4_unet_pw136.py",
-        checkpoint=PROJECT_ROOT / "artifacts" / "models"
-                   / "unet_bce_pw136_seed42_best.pt",
-    ),
-    ExperimentDef(
-        exp_id=5,
         name="UNet + Dice + BCE (0.5/0.5)",
         script=PROJECT_ROOT / "scripts" / "train_exp5_unet_dice_bce.py",
         checkpoint=PROJECT_ROOT / "artifacts" / "models"
                    / "unet_dice_bce_seed42_best.pt",
+    ),
+    ExperimentDef(
+        exp_id=5,
+        name="UNet + BCE + pos_weight=136",
+        script=PROJECT_ROOT / "scripts" / "train_exp4_unet_pw136.py",
+        checkpoint=PROJECT_ROOT / "artifacts" / "models"
+                   / "unet_bce_pw136_seed42_best.pt",
     ),
     ExperimentDef(
         exp_id=6,
@@ -196,7 +196,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--smoke-test", action="store_true",
-        help="CI mode: Exp 1 + Exp 5 only, 2 epochs each.",
+        help="CI mode: Exp 5 only (UNet+BCE+pw=136), 2 epochs.",
     )
     return parser.parse_args()
 
@@ -206,7 +206,7 @@ def main() -> None:
 
     Iterates over the experiment list, skips ones with existing checkpoints
     (unless ``--force``), runs the training script, and generates plots.
-    In ``--smoke-test`` mode only Exp 1 and Exp 5 are run with 2 epochs each.
+    In ``--smoke-test`` mode only Exp 5 (UNet+BCE+pw=136) is run with 2 epochs.
     """
     args = parse_args()
     smoke: bool = args.smoke_test
