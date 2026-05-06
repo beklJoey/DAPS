@@ -3,7 +3,7 @@ name: Scoring code quality
 on:
   push:
     branches:
-      - feedback
+      - main
   workflow_dispatch:
 
 jobs:
