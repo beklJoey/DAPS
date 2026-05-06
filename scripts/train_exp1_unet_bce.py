@@ -39,7 +39,7 @@ from src.utils.seed import set_seed
 
 # ── Hyper-parameters ──────────────────────────────────────────────────────────
 SEED: int = 42
-N_EPOCHS: int = 30
+N_EPOCHS: int = int(os.environ.get("SMOKE_TEST_EPOCHS", "30"))
 PATIENCE: int = 8
 LEARNING_RATE: float = 3e-4
 WEIGHT_DECAY: float = 1e-4
