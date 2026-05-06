@@ -24,16 +24,16 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up micromamba
-      uses: mamba-org/setup-micromamba@v1
+      uses: mamba-org/setup-micromamba@v2
       with:
-        micromamba-version: "1.5.10-0"
+        micromamba-version: "2.0.2-2"
         environment-file: environment.yml
         environment-name: amls2-final
-        cache-environment: true
-        cache-downloads: true
+        cache-environment: false
+        cache-downloads: false
 
     - name: Show interpreter (sanity check)
       shell: bash
